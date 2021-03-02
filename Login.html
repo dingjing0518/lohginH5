@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/login.css">
+    <script src="./js/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/blueimp-md5/2.10.0/js/md5.js"></script>
+</head>
+<body>
+<div class="Box">
+    <div class="login">
+        <div class="user">
+            账号：<input type="text" id="ipt1" name="">
+        </div>
+        <div class="user">
+            密码：<input type="password" id="ipt2" name="">
+        </div>
+        <div>
+            <input type="checkbox" name="" id="ipt3"> 记住用户名跟密码
+        </div>
+        <div>
+            <div class="btn">登录</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function load() {
+        let ipt1 = document.getElementById("ipt1");
+        let ipt2 = document.getElementById("ipt2");
+        let ipt3 = document.getElementById("ipt3");
+        if (localStorage.getItem('user')) {
+            ipt3.checked = true;
+            let user = JSON.parse(localStorage.getItem('user'));
+            let passWord = localStorage.getItem('passWord');
+            ipt1.value = user.loginname;
+            ipt2.value = passWord
+
+        }
+
+
+    }
+
+    load();
+    $('.btn').click(function () {
+
+        let ipt1 = document.getElementById("ipt1").value;
+        let ipt2 = document.getElementById("ipt2").value;
+        let ipt3 = document.getElementById("ipt3").checked;
+        if (ipt1 === undefined || ipt1 === '') {
+            alert("账号不能为空");
+            return;
+        }
+        if (ipt2 === undefined || ipt2 === '') {
+            alert("密码不能为空");
+            return;
+        }
+        // alert(md5(ipt2).toUpperCase());
+        let params = {
+            loginName: ipt1,
+            password: md5(ipt2).toUpperCase()
+        };
+        $.ajax({
+            // url:'http://www.jinshipark.com/testBoot/login?userName=' + ipt1 + '&passWord=' + ipt2,
+            url: 'http://localhost:8090/user/login',
+            type: 'POST',
+            contentType: 'application/json; charset=UTF-8',
+            async: false,
+            data: JSON.stringify(params),
+            dataType: 'json',
+            success: function (response) {
+                console.log(response);
+                if (response.status === 200) {
+                    let user = response.data;
+                    if(ipt3 == true){
+                        localStorage.setItem('user',JSON.stringify(user));
+                        localStorage.setItem('passWord',ipt2);
+                        window.location.href='./equipmentManagement.html?parkId='+user.parkid;
+                    }
+                } else {
+                    alert(response.msg)
+                }
+                // let user = response.user;
+                // if(ipt3 == true){
+                //     localStorage.setItem('user',JSON.stringify(user))
+                //     localStorage.setItem('passWord',ipt2)
+                // }
+                // if (response.code == 0) {
+                //
+                //     window.location.href=`http://www.jinshipark.com/lohginH5/equipmentManagement.html?username=${response.user.userName}`
+                // } else if (response.code == 1) {
+                //     alert(response.msg);
+                // } else {
+                //     alert(response.msg);
+                // }
+            }
+        })
+
+    })
+</script>
+</body>
+</html>

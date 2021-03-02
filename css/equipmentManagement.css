@@ -1,0 +1,48 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+#app{
+    width: 100%;
+    height: 100%;
+}
+.box{
+    width: 85%;
+    border: 1px solid black;
+    margin: 0 auto;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    padding: 0.5rem;
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap:wrap
+}
+.left{
+    width: 79%;
+}
+.left_color{
+    color: red;
+}
+.left div{
+    line-height: 2rem;
+    font-size: 1rem;
+}
+.right{
+    width: 20%;
+    display: flex;
+    flex-direction: column;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+}
+.right div{
+    font-size: 1rem;
+    line-height: 1.65rem;
+    background: #409EFF;
+    text-align: center;
+    color: white;
+    /* width: 60%; */
+}
+h2{
+    text-align: center;
+    line-height: 3rem;
+}

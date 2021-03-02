@@ -1,0 +1,41 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+.Box{
+    width: 100%;
+}
+.login{
+    width: 60%;
+    margin: 0 auto;
+    margin-top: 50%;
+}
+.login div{
+
+    font-size: 1rem;
+    
+}
+.user{
+    line-height: 3.5rem;
+}
+#ipt1{
+    width: 76%;
+    margin-left: 0.1rem;
+    padding: 0.1rem 0;
+}
+#ipt2{
+    width: 76%;
+    margin-left: 0.1rem;
+    padding: 0.1rem 0;
+}
+.btn{
+
+    text-align: center;
+    background: #409EFF;
+    color: #fff;
+    height: 1.3rem;
+    padding: 0.3rem;
+    width: 50%;
+    margin: 0 auto;
+    margin-top: 1.2rem;
+}

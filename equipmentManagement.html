@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/equipmentManagement.css">
+    <script src="./js/jquery.min.js"></script>
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+
+</head>
+<body>
+<div id="app">
+    <h2 class="h2">设备管理</h2>
+    <div class="box" v-for="(item,index) in items" :key="index">
+        <div class="left">
+            <div class="left_color">名称：{{item.cameraname}}</div>
+            <div>编号：{{item.cameraid}}</div>
+            <div>状态：</div>
+            <div>异常：</div>
+        </div>
+        <div class="right">
+            <div @click="addlift(index)">开闸</div>
+            <div @click="addfall(index)">落闸</div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+    // 创建vue实例化对象
+    new Vue({
+        el: document.getElementById('app'),
+        data: {
+            // 数据创建
+            items: []
+        },
+        methods: {
+            // 获取数据
+            getData(parkId) {
+                console.log('调用data');
+                let params = new URLSearchParams();
+                params.append('parkId', parkId);
+                axios.post("http://localhost:8090/camera/list",
+                    params
+                ).then((res) => {
+                    console.log(res);
+                    if (res.data.status == 200) {
+                        this.items = res.data.data;
+                    }
+                })
+            },
+            // 开闸
+            addlift(index) {
+                console.log(index, "开闸")
+                let res = this;
+                let id = Number(this.items[index].id);
+                console.log(id);
+                axios.get("http://localhost:8090/camera/openGateSend?id=" + id).then((res) => {
+                    alert("开闸成功")
+                }, (error) => {
+                    alert("开闸失败")
+                })
+
+            },
+            // 落闸
+            addfall(index) {
+                console.log(index, "落闸");
+                let res = this;
+                let id = Number(this.items[index].id);
+                axios.get("http://localhost:8090/camera/closeGateSend?id=" + id).then((res) => {
+                    alert("落闸成功")
+                }, (error) => {
+                    alert("落闸失败")
+                })
+
+            }
+        },
+        mounted() {
+            // 获取路径上的参数
+            var aaa = window.location.href.split("?");
+            var obj = {};
+            if (aaa[1]) {
+                gets = aaa[1].split(",");
+                for (var i = 0; i < gets.length; i++) {
+                    arr = gets[i].split('=');
+                    obj[arr[0]] = arr[1];
+                    console.log(typeof obj.parkId)
+                }
+            }
+            console.log('调用');
+            this.getData(obj.parkId)
+        }
+    })
+
+</script>
