@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>车辆系统</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="robots" content="all,follow">
+    <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/4.2.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.default.css" id="theme-stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/verify.css">
+    <link rel="stylesheet" type="text/css" href="statics/css/style.css"/>
+</head>
+
+<body>
+<div class="customer">
+    <div class="customer_top">
+        <a href="javascript:;" class="two_sel" id="solutiont1"
+           onMouseOver="hoverlia4('solutiont', 'solutiondiv', 1, 2,'two_sel')">车辆入场</a>
+        <a href="javascript:;" id="solutiont2"
+           onMouseOver="hoverlia4('solutiont', 'solutiondiv', 2, 2,'two_sel')">车辆出场</a>
+    </div>
+    <div id="solutiondiv1" style="border: red solid 1px;">
+        <!--
+            accept="image/*" 规定上传文件的类型，只支持图片
+            capture="camera" 打开系统照相机进行拍照，触发
+            onchange事件
+          -->
+        <div class="upload-file" id="upload-file">
+            <input type="file" id="file" accept="image/*" onchange="getImageFile(event)" capture="camera">
+        </div>
+        <div style="margin-top: -200px">
+            <img id='img' style="height: 200px;width: 96%;margin-left: 2%;">
+        </div>
+    </div>
+    <div id="solutiondiv2" class="divhidden" style="border: #1c7430 solid 1px">
+
+    </div>
+</div>
+<script src="statics/js/jquery.min.js"></script>
+<script type="text/javascript">
+    //js tab功能
+    function g(o) {
+        return document.getElementById(o);
+    }
+
+    function hoverlia4(t_n, t_n2, n, k, className) {
+        for (var i = 1; i <= k; i++) {
+            g(t_n2 + i).className = 'divhidden';
+            g(t_n + i).className = '';
+        }
+        g(t_n2 + n).className = 'container';
+        g(t_n + n).className = className;
+        setTimeout(function () {
+            $("#" + t_n2 + n).find(".anim").addClass("anim-show");
+        }, 6)
+    }
+
+    //合作客户翻页调用
+    $(".customer-buttons div").click(function () {
+        var linum = $(this).index();
+        var CaseList = $(".customer_items .item");
+        $(this).addClass('disabled').siblings().removeClass('disabled');
+        CaseList.eq(linum).show().siblings().hide();
+    });
+
+    function getImageFile(e) {
+        // FileReader 方法参考地址：https://developer.mozilla.org/zh-CN/docs/Web/API/FileReader
+        let reader = new FileReader();
+
+        // readAsDataURL 方法参考地址：https://developer.mozilla.org/zh-CN/docs/Web/API/FileReader/readAsDataURL
+        reader.readAsDataURL(e.target.files[0]);
+        // 监听读取操作结束
+        reader.onloadend = function () {
+            // 取出base64代码
+            var dataURL = reader.result;
+            // 赋值到图片上显示出来
+            document.getElementById("img").src = dataURL;
+            document.getElementById('upload-file').style.backgroundImage='none';
+        };
+    }
+</script>
+
+</body>
+
+</html>

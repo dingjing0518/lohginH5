@@ -1,104 +1,156 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="./css/login.css">
-    <script src="./js/jquery.min.js"></script>
-    <script src="https://cdn.bootcss.com/blueimp-md5/2.10.0/js/md5.js"></script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>登录</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="robots" content="all,follow">
+    <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/4.2.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.default.css" id="theme-stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/verify.css">
 </head>
 <body>
-<div class="Box">
-    <div class="login">
-        <div class="user">
-            账号：<input type="text" id="ipt1" name="">
-        </div>
-        <div class="user">
-            密码：<input type="password" id="ipt2" name="">
-        </div>
-        <div>
-            <input type="checkbox" name="" id="ipt3"> 记住用户名跟密码
-        </div>
-        <div>
-            <div class="btn">登录</div>
+<div class="page login-page">
+    <div class="container d-flex align-items-center">
+        <div class="form-holder has-shadow">
+            <div class="row">
+                <div class="info d-flex align-items-center" style="width: 100%">
+                    <div class="content">
+                        <div class="logo">
+                            <h1>欢迎登录</h1>
+                        </div>
+                        <p>颛华泊车-道路停车管理系统</p>
+                    </div>
+                </div>
+                <!-- Form Panel    -->
+                <div class="col-md-12 bg-white">
+                    <div class="form d-flex align-items-center">
+                        <div class="content">
+                            <form class="form-validate">
+                                <div class="form-group">
+                                    <input id="login-parkName" type="text" placeholder="车场名称" class="input-material">
+                                </div>
+                                <div class="form-group">
+                                    <input id="login-username" type="text" placeholder="用户名" class="input-material">
+                                </div>
+                                <div class="form-group">
+                                    <input id="login-password" type="password" placeholder="密码" class="input-material">
+                                </div>
+                                <div id="slide-verify">
+                                </div>
+                                <input type="button" id="login" class="btn-block btn-primary" value="登录"/>
+
+                                <div class="custom-control custom-checkbox ">
+                                    <input type="checkbox" class="custom-control-input" id="check1">
+                                    <label class="custom-control-label" for="check1">记住用户名和密码&nbsp;&nbsp;</label>
+                                </div>
+                            </form>
+                            <br/>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
+<!-- JavaScript files-->
+<script src="https://libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
+<script src="https://ajax.aspnetcdn.com/ajax/bootstrap/4.2.1/bootstrap.min.js"></script>
+<script src="vendor/jquery-validation/jquery.validate.min.js"></script><!--表单验证-->
+<script type="text/javascript" src="js/verify.js"></script>
+<script src="https://cdn.bootcss.com/blueimp-md5/2.10.0/js/md5.js"></script>
+<!-- Main File-->
+<script src="js/front.js"></script>
 <script>
-    function load() {
-        let ipt1 = document.getElementById("ipt1");
-        let ipt2 = document.getElementById("ipt2");
-        let ipt3 = document.getElementById("ipt3");
-        if (localStorage.getItem('user')) {
-            ipt3.checked = true;
-            let user = JSON.parse(localStorage.getItem('user'));
-            let passWord = localStorage.getItem('passWord');
-            ipt1.value = user.loginname;
-            ipt2.value = passWord
-
+    //定义全局变量
+    let slideVerifyFlag = false;
+    //滑动插件
+    let slideVerify = $('#slide-verify').slideVerify({
+        type: 1,		//类型
+        vOffset: 5,	//误差量，根据需求自行调整
+        barSize: {
+            width: '100%',
+            height: '35px',
+        },
+        ready: function () {
+        },
+        success: function () {
+            //验证成功
+            slideVerifyFlag = true;
+        },
+        error: function () {
+            slideVerifyFlag = false;
         }
-
-
-    }
-
-    load();
-    $('.btn').click(function () {
-
-        let ipt1 = document.getElementById("ipt1").value;
-        let ipt2 = document.getElementById("ipt2").value;
-        let ipt3 = document.getElementById("ipt3").checked;
-        if (ipt1 === undefined || ipt1 === '') {
-            alert("账号不能为空");
+    });
+    $(function () {
+        /*判断上次是否勾选记住密码和自动登录*/
+        let check1s = localStorage.getItem("check1");
+        let parkName = localStorage.getItem("parkName");
+        let userName = localStorage.getItem("userName");
+        let passWord = localStorage.getItem("passWord");
+        if (check1s == "true") {
+            $("#login-parkName").val(parkName);
+            $("#login-username").val(userName);
+            $("#login-password").val(passWord);
+            $("#check1").prop('checked', true);
+        } else {
+            $("#login-parkName").val('');
+            $("#login-username").val('');
+            $("#login-password").val('');
+            $("#check1").prop('checked', false);
+        }
+    });
+    /*登录*/
+    $("#login").click(function () {
+        let parkName = $("#login-parkName").val();
+        let userName = $("#login-username").val();
+        let passWord = $("#login-password").val();
+        if (parkName == '' || parkName == undefined) {
+            alert("请输入车场名称");
             return;
         }
-        if (ipt2 === undefined || ipt2 === '') {
-            alert("密码不能为空");
+        if (userName == '' || userName == undefined) {
+            alert("请输入用户名");
             return;
         }
-        // alert(md5(ipt2).toUpperCase());
+        if (passWord == '' || passWord == undefined) {
+            alert("请输入密码");
+            return;
+        }
+        if (!slideVerifyFlag) {
+            alert("请完成滑动验证");
+            return;
+        }
         let params = {
-            loginName: ipt1,
-            password: md5(ipt2).toUpperCase()
+            "parkName": parkName,
+            "loginName": userName,
+            "password": md5(passWord).toUpperCase()
         };
+        /*获取当前输入的账号密码*/
+        localStorage.setItem("parkName", parkName);
+        localStorage.setItem("userName", userName);
+        localStorage.setItem("passWord", passWord);
+        /*获取记住密码  自动登录的 checkbox的值*/
+        let check1 = $("#check1").prop('checked');
+        localStorage.setItem("check1", check1);
         $.ajax({
-            // url:'http://www.jinshipark.com/testBoot/login?userName=' + ipt1 + '&passWord=' + ipt2,
-            url: 'http://localhost:8090/user/login',
-            type: 'POST',
-            contentType: 'application/json; charset=UTF-8',
-            async: false,
-            data: JSON.stringify(params),
+            type: "post",
+            url: "http://localhost:9091/user/login",
             dataType: 'json',
-            success: function (response) {
-                console.log(response);
-                if (response.status === 200) {
-                    let user = response.data;
-                    if(ipt3 == true){
-                        localStorage.setItem('user',JSON.stringify(user));
-                        localStorage.setItem('passWord',ipt2);
-                        window.location.href='./equipmentManagement.html?parkId='+user.parkid;
-                    }
+            contentType: 'application/json;charset=UTF-8',
+            data: JSON.stringify(params),
+            success: function (res) {
+                if (res.status == 200) {
+                    alert("登录成功");
                 } else {
-                    alert(response.msg)
+                    alert(res.msg);
                 }
-                // let user = response.user;
-                // if(ipt3 == true){
-                //     localStorage.setItem('user',JSON.stringify(user))
-                //     localStorage.setItem('passWord',ipt2)
-                // }
-                // if (response.code == 0) {
-                //
-                //     window.location.href=`http://www.jinshipark.com/lohginH5/equipmentManagement.html?username=${response.user.userName}`
-                // } else if (response.code == 1) {
-                //     alert(response.msg);
-                // } else {
-                //     alert(response.msg);
-                // }
             }
-        })
-
-    })
+        });
+        slideVerify.refresh();
+    });
 </script>
 </body>
 </html>
