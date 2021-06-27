@@ -1726,7 +1726,7 @@ select.form-control option {
 button, input[type='submit'] {
   cursor: pointer;
   font-family: inherit;
-  font-weight: 300 !important;
+  /*font-weight: 300 !important;*/
 }
 
 .input-group .dropdown-toggle {

@@ -12,6 +12,12 @@
     <link rel="stylesheet" href="css/style.default.css" id="theme-stylesheet">
     <link rel="stylesheet" type="text/css" href="css/verify.css">
     <link rel="stylesheet" type="text/css" href="css/style.css"/>
+    <style>
+        img[src=""] {
+            opacity: 0;
+            z-index: -1;
+        }
+    </style>
 </head>
 
 <body>
@@ -30,15 +36,13 @@
           -->
         <div class="upload-file" id="upload-file">
             <input type="file" id="file" accept="image/*" onchange="getImageFile(event)" capture="camera">
-        </div>
-        <div style="margin-top: -200px">
-            <img id='img' style="height: 200px;width: 96%;margin-left: 2%;">
+            <img id='img' style="height: 190px;width: 96%;margin-left: 2%;margin-top: -225px">
         </div>
         <div id="carLicenseBox">
             <div class="carLicenseTitle">
                 车牌号
             </div>
-            <div class="carLicenseMain">
+            <div class="carLicenseMain" id="in-carLicenseMain">
                 <ul>
                     <li class="active">省</li>
                     <li></li>
@@ -50,15 +54,88 @@
                     <li></li>
                 </ul>
             </div>
-            <div>
-                <button>自动识别</button>
-                <button >入场</button>
+            <div id="in-button">
+                <button class="submit">自动识别</button>
+                <button class="submit" id="in-submit">入场</button>
             </div>
-            <div class="foot" style="display: none;"></div>
+        </div>
+        <div class="icon-divv">
+
         </div>
     </div>
-    <div id="solutiondiv2" class="divhidden" style="border: #1c7430 solid 1px">
+    <div id="solutiondiv2" class="divhidden">
+        <!--
+                    accept="image/*" 规定上传文件的类型，只支持图片
+                    capture="camera" 打开系统照相机进行拍照，触发
+                    onchange事件
+                  -->
+        <div class="upload-file" id="out-upload-file">
+            <input type="file" id="out-file" accept="image/*" onchange="getImageFileForOut(event)" capture="camera">
+            <img id='out-img' style="height: 190px;width: 96%;margin-left: 2%;margin-top: -225px">
+        </div>
+        <div id="out-carLicenseBox">
+            <div class="carLicenseTitle">
+                车牌号
+            </div>
+            <div class="carLicenseMain" id="out-carLicenseMain">
+                <ul>
+                    <li class="active">省</li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+            <div id="out-button">
+                <button class="submit">自动识别</button>
+                <button class="submit" id="out-refresh">重置</button>
+                <button class="submit" id="detail-submit">详情</button>
+                <button class="submit" id="out-submit">出场</button>
 
+            </div>
+        </div>
+        <div class="icon-divv" id="out-icon-divv">
+            <div class="leftContext">
+                <div id='getCar' style="margin-top: 4%;">
+                    <div class="box">
+                        <p>车牌号:</p>
+                        <p id='plateNumber'></p>
+                    </div>
+                    <!--                    <div class="box">-->
+                    <!--                        <p>收费类型:</p>-->
+                    <!--                        <p id='lpLgType'></p>-->
+                    <!--                    </div>-->
+                    <div class="box">
+                        <p>入场时间:</p>
+                        <p id='intoTime'></p>
+                    </div>
+                    <div class="box">
+                        <p>当前时间:</p>
+                        <p id='goOutTime'></p>
+                    </div>
+                    <div class="box">
+                        <p>停车时长:</p>
+                        <p id='stopTime'></p>
+                    </div>
+                    <div class="box">
+                        <p>应收金额:</p>
+                        <p style="color: red" id='payNum'></p>
+                    </div>
+                    <div class="box">
+                        <p>实收金额:</p>
+                        <input type="text" id='realNum'/>
+                    </div>
+                </div>
+
+            </div>
+            <div class="rightContext">
+                <p style="margin-left:22%;margin-top:5%; color: red;font-weight: bold">支付二维码</p>
+                <div id="qrcode" style="width:100px; height:100px; margin-top:-5%;margin-left: 3%"></div>
+            </div>
+        </div>
     </div>
     <div id="keyboardBox">
         <div class="provienceBox" id="provienceBox">
@@ -137,8 +214,6 @@
                 <li>T</li>
                 <li>Y</li>
                 <li>U</li>
-                <li>I</li>
-                <li>O</li>
                 <li>P</li>
             </ul>
             <ul>
@@ -167,45 +242,209 @@
     </div>
 </div>
 <script src="https://libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript" src="js/qrcode.js"></script>
+<script type="text/javascript" src="js/exif.js"></script>
 <script type="text/javascript">
+    let fileImg = '';
+    let lpParkingOften = '';
+    let fmt = "YYYY-mm-dd HH:MM";
+    let prefixUrl = 'http://out.jinshipark.com/road-park-pay/roadPay.html';
+    let parkId = getQueryVariable('parkId');
+    let userName = decodeURIComponent(getQueryVariable('userName'));
+    let qrcode = new QRCode(document.getElementById("qrcode"), {
+        width: 140,
+        height: 140
+    });
+
+    function makeCode(text) {
+        qrcode.makeCode(text);
+    }
+
     //js tab功能
     function g(o) {
         return document.getElementById(o);
     }
 
+    //获取照片的元信息（拍摄方向）
+    function getPhotoOrientation(img) {
+        var orient;
+        EXIF.getData(img, function () {
+            orient = EXIF.getTag(this, 'Orientation');
+        });
+        return orient;
+    }
+
+    //重置出场页面
+    function resetOut() {
+        document.getElementById("out-img").src = '';
+        $("#out-img").hide();
+        document.getElementById('out-upload-file').style.backgroundImage = 'url(./images/photo_icon.jpg)';
+        document.getElementById('out-file').value = null;
+        document.getElementById('plateNumber').innerHTML = '';
+        //进场时间
+        document.getElementById('intoTime').innerHTML = '';
+        //出场时间
+        document.getElementById('goOutTime').innerHTML = '';
+        //停车时长
+        document.getElementById('stopTime').innerHTML = '';
+        //支付金额
+        document.getElementById('payNum').innerHTML = '';
+        //实收金额
+        document.getElementById('realNum').value = '';
+        //二维码
+        $("#qrcode").hide();
+
+    }
+
+    //重置入场页面
+    function resetIn() {
+        document.getElementById("img").src = '';
+        $("#img").hide();
+        document.getElementById('upload-file').style.backgroundImage = 'url(./images/photo_icon.jpg)';
+        document.getElementById('file').value = null;
+    }
+
+    //重置车牌输入框
+    function resetCarLicense() {
+        $('.carLicenseMain ul li').each(function () {
+            if ($(this).index() == 0) {
+                $(this).addClass('active').html('省');
+            } else {
+                $(this).removeClass('active').html('');
+            }
+        });
+    }
+
     function hoverlia4(t_n, t_n2, n, k, className) {
+        $("#keyboardBox").hide();
         for (var i = 1; i <= k; i++) {
             g(t_n2 + i).className = 'divhidden';
             g(t_n + i).className = '';
         }
         g(t_n2 + n).className = 'container';
         g(t_n + n).className = className;
+        //重置车辆入场拍照框
+        resetIn();
+        resetOut();
+        resetCarLicense();
         setTimeout(function () {
             $("#" + t_n2 + n).find(".anim").addClass("anim-show");
         }, 6)
     }
 
-    //合作客户翻页调用
-    $(".customer-buttons div").click(function () {
-        var linum = $(this).index();
-        var CaseList = $(".customer_items .item");
-        $(this).addClass('disabled').siblings().removeClass('disabled');
-        CaseList.eq(linum).show().siblings().hide();
-    });
-
     function getImageFile(e) {
         // FileReader 方法参考地址：https://developer.mozilla.org/zh-CN/docs/Web/API/FileReader
         let reader = new FileReader();
-
         // readAsDataURL 方法参考地址：https://developer.mozilla.org/zh-CN/docs/Web/API/FileReader/readAsDataURL
         reader.readAsDataURL(e.target.files[0]);
         // 监听读取操作结束
-        reader.onloadend = function () {
-            // 取出base64代码
-            var dataURL = reader.result;
-            // 赋值到图片上显示出来
-            document.getElementById("img").src = dataURL;
-            document.getElementById('upload-file').style.backgroundImage = 'none';
+        reader.onload = function (readerEvent) {
+            // 创建图片
+            let image = new Image();
+            image.src = readerEvent.target.result;
+            image.onload = function (imageEvent) {
+                let orient = getPhotoOrientation(image);
+                console.log(orient);
+                let w = image.naturalWidth;
+                let h = image.naturalHeight;
+                // 调整尺寸
+                let maxWidth = 640;
+                let maxHeight = 360;
+                let resizeW;
+                let resizeH;
+                if (w > maxWidth || h > maxHeight) {
+                    let ratio = Math.max(w / maxWidth, h / maxHeight);
+                    resizeW = w / ratio;
+                    resizeH = h / ratio;
+                } else {
+                    resizeW = w;
+                    resizeH = h;
+                }
+                // 生成canvas
+                let canvas = document.createElement("canvas");
+                canvas.width = resizeW;
+                canvas.height = resizeH;
+
+                let ctx = canvas.getContext('2d');
+                //判断图片拍摄方向是否旋转了90度
+                if (orient == 6) {
+                    ctx.save();//保存状态
+                    ctx.translate(resizeW / 2, resizeH / 2);//设置画布上的(0,0)位置，也就是旋转的中心点
+                    ctx.rotate(90 * Math.PI / 180);//把画布旋转90度
+                    // 执行Canvas的drawImage语句
+                    ctx.drawImage(image, 0 - resizeH / 2, 0 - resizeW / 2, resizeH, resizeW);//把图片绘制在画布translate之前的中心点，
+                    ctx.restore();//恢复状态
+                } else {
+                    // 执行Canvas的drawImage语句
+                    ctx.drawImage(image, 0, 0, resizeW, resizeH);
+                }
+                // 进行base64压缩
+                let base64 = canvas.toDataURL('image/jpeg', 1);
+                let blob = dataURItoBlob(base64);
+                fileImg = new window.File([blob], 'inImage');
+                // 赋值到图片上显示出来
+                document.getElementById("img").src = base64;
+                $("#img").show();
+                document.getElementById('upload-file').style.backgroundImage = 'none';
+            };
+        };
+    }
+
+    function getImageFileForOut(e) {
+        // FileReader 方法参考地址：https://developer.mozilla.org/zh-CN/docs/Web/API/FileReader
+        let reader = new FileReader();
+        // readAsDataURL 方法参考地址：https://developer.mozilla.org/zh-CN/docs/Web/API/FileReader/readAsDataURL
+        reader.readAsDataURL(e.target.files[0]);
+        // 监听读取操作结束
+        reader.onload = function (readerEvent) {
+            // 创建图片
+            let image = new Image();
+            image.src = readerEvent.target.result;
+            image.onload = function (imageEvent) {
+                let orient = getPhotoOrientation(image);
+                console.log(orient);
+                let w = image.naturalWidth;
+                let h = image.naturalHeight;
+                // 调整尺寸
+                let maxWidth = 640;
+                let maxHeight = 360;
+                let resizeW;
+                let resizeH;
+                if (w > maxWidth || h > maxHeight) {
+                    let ratio = Math.max(w / maxWidth, h / maxHeight);
+                    resizeW = w / ratio;
+                    resizeH = h / ratio;
+                } else {
+                    resizeW = w;
+                    resizeH = h;
+                }
+                // 生成canvas
+                let canvas = document.createElement("canvas");
+                canvas.width = resizeW;
+                canvas.height = resizeH;
+
+                let ctx = canvas.getContext('2d');
+                //判断图片拍摄方向是否旋转了90度
+                if (orient == 6) {
+                    ctx.save();//保存状态
+                    ctx.translate(resizeW / 2, resizeH / 2);//设置画布上的(0,0)位置，也就是旋转的中心点
+                    ctx.rotate(90 * Math.PI / 180);//把画布旋转90度
+                    // 执行Canvas的drawImage语句
+                    ctx.drawImage(image, 0 - resizeH / 2, 0 - resizeW / 2, resizeH, resizeW);//把图片绘制在画布translate之前的中心点，
+                    ctx.restore();//恢复状态
+                } else {
+                    // 执行Canvas的drawImage语句
+                    ctx.drawImage(image, 0, 0, resizeW, resizeH);
+                }
+                // 进行base64压缩
+                let base64 = canvas.toDataURL('image/jpeg', 1);
+                let blob = dataURItoBlob(base64);
+                fileImg = new window.File([blob], 'outImage');
+                // 赋值到图片上显示出来
+                document.getElementById("out-img").src = base64;
+                $("#out-img").show();
+                document.getElementById('out-upload-file').style.backgroundImage = 'none';
+            };
         };
     }
 
@@ -214,7 +453,8 @@
         $("#keyboardBox").hide();
         $(".carLicenseMain").on("click", function () {
             $("#keyboardBox").show();
-            // $(".foot").show()
+            $('#textBox').hide();
+            $('#provienceBox').show();
             $("body,html").animate({scrollTop: 300}, 500);
 
         });
@@ -232,17 +472,17 @@
         $(".textBox ul li").each(function () {
             $(this).click(function () {
                 $(this).addClass("activeKey"); //添加动画效果
-                $(this).siblings().removeClass("activeKey") //移除动画效果
-                var interval = setTimeout(function () { //定时器及时清除自身动画效果
-                    $(this).removeClass("activeKey")
+                $(this).siblings().removeClass("activeKey"); //移除动画效果
+                let interval = setTimeout(function () { //定时器及时清除自身动画效果
+                    $(this).removeClass("activeKey");
                     window.clearInterval(interval)
                 }.bind(this), 200);
             })
         });
-        var num = 7; //需要输入的车牌数
+        let num = 7; //需要输入的车牌数
         //切换键盘
         $('.changeContentBtn').click(function () {
-            $('li').siblings().removeClass("activeKey")
+            $('li').siblings().removeClass("activeKey");
             if ($(this).html() === 'ABC') {
                 $('#textBox').show();
                 $('#provienceBox').hide();
@@ -260,14 +500,14 @@
         //获取当前车牌数字索引
         function getIndex() {
             if (localStorage.getItem('employ-coupon')) {
-                var index = localStorage.getItem('employ-coupon').length;
+                let index = localStorage.getItem('employ-coupon').length;
                 if (index > 7) {
                     index = 7
                 }
                 $('.carLicenseMain ul li').removeClass('active');
                 $('.carLicenseMain ul ').find('li').eq(index).addClass('active');
                 $('.carLicenseMain ul li').each(function () {
-                    var reg = new RegExp('active');
+                    let reg = new RegExp('active');
                     if (reg.test($(this).attr('class'))) {
                         index = $(this).index();
                     }
@@ -275,14 +515,13 @@
                 localStorage.removeItem('employ-coupon');
                 return index
             } else {
-                var index = 0;
+                let index = 0;
                 $('.carLicenseMain ul li').each(function () {
-                    var reg = new RegExp('active');
+                    let reg = new RegExp('active');
                     if (reg.test($(this).attr('class'))) {
                         index = $(this).index();
                     }
                 });
-                console.log(index);
                 return index;
             }
         }
@@ -304,25 +543,22 @@
         //省份键盘点击事件
         $('#provienceBox ul li:not(.other)').click(function () {
             $(this).addClass("activeKey"); //添加动画效果
-            $(this).siblings().removeClass("activeKey") //移除动画效果
-            var interval = setTimeout(function () { //定时器及时清除自身动画效果
+            $(this).siblings().removeClass("activeKey"); //移除动画效果
+            let interval = setTimeout(function () { //定时器及时清除自身动画效果
                 $(this).removeClass("activeKey");
-                var self = this;
+                let self = this;
                 keyboard(num, self);
                 window.clearInterval(interval)
             }.bind(this), 200);
-            //省份点击后键盘切换
-            //var self = this;
-            //keyboard(num,self);
         });
         //文本键盘点击事件
         $('#textBox ul li:not(.other)').click(function () {
-            var self = this;
+            let self = this;
             keyboard(num, self);
         });
         //回退按钮点击事件
         $('.deleteBtn').click(function () {
-            var index = getIndex();
+            let index = getIndex();
             if (index === num) {
                 if ($('.carLicenseMain ul li.active').html() !== '') {
                     $('.carLicenseMain ul li.active').html('');
@@ -340,27 +576,11 @@
             }
         });
         //提交按钮点击事件
-        $('#submitBtn').click(function () {
+        $('#in-submit').click(function () {
             let countdown = 10;
-            setTime(countdown);
-
-            function setTime(countdown) {
-                if (countdown === 0) {
-                    document.getElementById('submitBtn').removeAttribute("disabled");
-                    document.getElementById('submitBtn').innerHTML = "提交";
-                } else {
-                    document.getElementById('submitBtn').setAttribute("disabled", true);
-                    document.getElementById('submitBtn').innerHTML = "提交中(" + countdown + ")";
-                    countdown--;
-                    setTimeout(function () {
-                        setTime(countdown);
-                    }, 1000)
-                }
-            }
-
-            var carNum = "";
-            var flag = true;
-            $(".carLicenseMain ul li").each(function (index) {
+            let carNum = "";
+            let flag = true;
+            $("#in-carLicenseMain ul li").each(function (index) {
                 if (index !== 7) {
                     if ($(this).html() === "" || $(this).html() === undefined) {
                         flag = false;
@@ -368,39 +588,240 @@
                 }
                 carNum += $(this).html()
             });
+            if (fileImg == '' || fileImg == undefined || parkId == '' || parkId == undefined) {
+                alert("参数异常");
+                return;
+            }
+            console.log(carNum);
             if (!flag) {
                 alert("车牌录入不正确");
                 return;
             }
-            localStorage.setItem('employ-coupon', carNum);
-            var id = getQueryVariable('id');
-            var type = getQueryVariable('type');
+            // localStorage.setItem('employ-coupon', carNum);
+            let formData = new FormData();
+            formData.append('file', fileImg);
+            formData.append("carNum", carNum);
+            formData.append("parkId", parkId);
+            formData.append("userName", userName);
+            document.getElementById('in-submit').setAttribute("disabled", true);
             $.ajax({
-                url: "http://api.jinshipark.com/yhq-war/couponOrderManager/insertCouponOrder",
-                // url: "http://localhost:8080/couponOrderManager/insertCouponOrder",
-                contentType: "charset=UTF-8",
-                dataType: "json",
-                type: "get",
-                data: {
-                    "plate": String(carNum),
-                    "id": Number(id),
-                    "type": Number(type)
-                },
+                // url: "http://localhost:9091/lincensePlate/saveLincensePlateForRoad",
+                url: "http://47.103.155.55:7070/jinshipark-road-park-api/lincensePlate/saveLincensePlateForRoad",
+                type: 'POST',
+                cache: false,
+                processData: false,
+                contentType: false,
+                data: formData,
                 success: function (data) {
-                    if (data.msg === '使用优惠券成功') {
-                        window.location.href = './success.html?carNum=' + encodeURIComponent(carNum) + '&type=' + type + '&id=' + id;
+                    document.getElementById('in-submit').removeAttribute("disabled");
+                    if (data.status == 200) {
+                        alert("入场成功");
+                        resetIn();
+                        resetCarLicense();
+                        fileImg = '';
                     } else {
-                        window.location.href = './error.html?carNum=' + encodeURIComponent(carNum) + '&type=' + type + '&id=' + id + '&msg=' + encodeURIComponent(data.msg);
+                        alert(data.msg);
                     }
                 },
                 error: function (data) {
-                    msg = "系统异常";
-                    window.location.href = './error.html?carNum=' + encodeURIComponent(carNum) + '&type=' + type + '&id=' + id + '&msg=' + encodeURIComponent(msg);
+                    document.getElementById('in-submit').removeAttribute("disabled");
+                    alert("系统异常");
                 },
             });
 
-        })
+        });
+        $('#detail-submit').click(function () {
+            let carNum = "";
+            let flag = true;
+            $("#out-carLicenseMain ul li").each(function (index) {
+                if (index !== 7) {
+                    if ($(this).html() === "" || $(this).html() === undefined) {
+                        flag = false;
+                    }
+                }
+                carNum += $(this).html()
+            });
+            if (fileImg == '' || fileImg == undefined || parkId == '' || parkId == undefined) {
+                alert("参数异常");
+                return;
+            }
+            if (!flag) {
+                alert("车牌录入不正确");
+                return;
+            }
+            // localStorage.setItem('employ-coupon', carNum);
+            let formData = new FormData();
+            formData.append('file', fileImg);
+            formData.append("carNum", carNum);
+            formData.append("parkId", parkId);
+            document.getElementById('detail-submit').setAttribute("disabled", true);
+            $.ajax({
+                // url: "http://localhost:9091/lincensePlate/getLincensePlateForRoad",
+                url: "http://47.103.155.55:7070/jinshipark-road-park-api/lincensePlate/getLincensePlateForRoad",
+                type: 'POST',
+                cache: false,
+                processData: false,
+                contentType: false,
+                data: formData,
+                success: function (data) {
+                    document.getElementById('detail-submit').removeAttribute("disabled");
+                    if (data.status == 200) {
+                        console.log(data.data);
+                        //车牌号
+                        document.getElementById('plateNumber').innerHTML = data.data.lpLincensePlateIdCar;
+                        //进场时间
+                        document.getElementById('intoTime').innerHTML = dateFormat(fmt, new Date(data.data.lpInboundTime));
+                        //出场时间
+                        document.getElementById('goOutTime').innerHTML = dateFormat(fmt, new Date());
+                        //停车时长
+                        document.getElementById('stopTime').innerHTML = MinusToDHM(Number(data.data.lpParkingOften));
+                        lpParkingOften = data.data.lpParkingOften;
+                        //支付金额
+                        document.getElementById('payNum').innerHTML = data.data.lpParkingCost;
+                        //生成二维码
+                        if (data.data.lpLgType == 0) {
+                            makeCode(prefixUrl + "?parkId=" + parkId + "&carNum=" + carNum);
+                            $("#qrcode").show();
+                        }
+                    } else {
+                        alert(data.msg);
+                    }
+                },
+                error: function (data) {
+                    document.getElementById('in-submit').removeAttribute("disabled");
+                    alert("系统异常");
+                },
+            });
+
+        });
+        $('#out-refresh').click(function () {
+            resetOut();
+            resetCarLicense();
+        });
+        $('#out-submit').click(function () {
+            if (document.getElementById('payNum').innerHTML == '' ||
+                document.getElementById('plateNumber').innerHTML == '' ||
+                document.getElementById('intoTime').innerHTML == '' ||
+                document.getElementById('goOutTime').innerHTML == '' ||
+                document.getElementById('stopTime').innerHTML == '') {
+                alert("参数异常");
+                return;
+            }
+            let formData = new FormData();
+            formData.append("parkId", parkId);
+            formData.append("dateOften", lpParkingOften);
+            if (document.getElementById('payNum').innerHTML == 0) {
+                formData.append("carNum", document.getElementById('plateNumber').innerHTML);
+                formData.append("payNum", document.getElementById('payNum').innerHTML);
+                formData.append("realNum", 0);
+            } else if (document.getElementById('payNum').innerHTML > 0) {
+                if (document.getElementById('realNum').value == '') {
+                    alert("实收金额不能不为空");
+                    return;
+                } else {
+                    if (Number(document.getElementById('realNum').value) > Number(document.getElementById('payNum').innerHTML)) {
+                        alert("实收金额不能大于应收金额");
+                        return;
+                    }
+                    formData.append("carNum", document.getElementById('plateNumber').innerHTML);
+                    formData.append("payNum", document.getElementById('payNum').innerHTML);
+                    formData.append("realNum", document.getElementById('realNum').value);
+                }
+            }
+            document.getElementById('out-submit').setAttribute("disabled", true);
+            $.ajax({
+                // url: "http://localhost:9091/lincensePlate/departure",
+                url: "http://47.103.155.55:7070/jinshipark-road-park-api/lincensePlate/departure",
+                type: 'POST',
+                cache: false,
+                processData: false,
+                contentType: false,
+                data: formData,
+                success: function (data) {
+                    document.getElementById('out-submit').removeAttribute("disabled");
+                    if (data.status == 200) {
+                        alert("出场成功");
+                        resetOut();
+                        resetCarLicense();
+                    } else {
+                        alert(data.msg);
+                    }
+                },
+                error: function (data) {
+                    document.getElementById('out-submit').removeAttribute("disabled");
+                    alert("系统异常");
+                },
+            });
+        });
     });
+
+    function getQueryVariable(variable) {
+        let query = window.location.search.substring(1);
+        let vars = query.split("&");
+        for (let i = 0; i < vars.length; i++) {
+            let pair = vars[i].split("=");
+            if (pair[0] === variable) {
+                return pair[1];
+            }
+        }
+        return '';
+    }
+
+    //分钟转化为天时分
+    function MinusToDHM(minute) {
+        var timestamp_day = Math.floor(minute / 60 / 24);
+        var timestamp_hour = Math.floor(minute % 1440 / 60);
+        var timestamp_minutes = Math.floor(minute % 1440 % 60);
+        return timestamp_day + '天' + timestamp_hour + '时' + timestamp_minutes + '分';
+    }
+
+    function dateFormat(fmt, date) {
+        let ret;
+        const opt = {
+            "Y+": date.getFullYear().toString(),        // 年
+            "m+": (date.getMonth() + 1).toString(),     // 月
+            "d+": date.getDate().toString(),            // 日
+            "H+": date.getHours().toString(),           // 时
+            "M+": date.getMinutes().toString(),         // 分
+            "S+": date.getSeconds().toString()          // 秒
+            // 有其他格式化字符需求可以继续添加，必须转化成字符串
+        };
+        for (let k in opt) {
+            ret = new RegExp("(" + k + ")").exec(fmt);
+            if (ret) {
+                fmt = fmt.replace(ret[1], (ret[1].length == 1) ? (opt[k]) : (opt[k].padStart(ret[1].length, "0")))
+            }
+        }
+        return fmt;
+    }
+
+    function setTime(countdown) {
+        if (countdown === 0) {
+            document.getElementById('in-submit').removeAttribute("disabled");
+            document.getElementById('in-submit').innerHTML = "入场";
+        } else {
+            document.getElementById('in-submit').setAttribute("disabled", true);
+            document.getElementById('in-submit').innerHTML = "入场中(" + countdown + ")";
+            countdown--;
+            setTimeout(function () {
+                setTime(countdown);
+            }, 1000)
+        }
+    }
+
+    function dataURItoBlob(base64Data) {
+        var byteString;
+        if (base64Data.split(',')[0].indexOf('base64') >= 0)
+            byteString = atob(base64Data.split(',')[1]);
+        else
+            byteString = unescape(base64Data.split(',')[1]);
+        var mimeString = base64Data.split(',')[0].split(':')[1].split(';')[0];
+        var ia = new Uint8Array(byteString.length);
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ia], {type: mimeString});
+    }
 </script>
 
 </body>

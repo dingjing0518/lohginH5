@@ -40,7 +40,7 @@
                                 </div>
                                 <div id="slide-verify">
                                 </div>
-                                <input type="button" id="login" class="btn-block btn-primary" value="登录"/>
+                                <input type="button" id="login" class="btn-block btn-primary" value="登录" style="font-size: 20px"/>
 
                                 <div class="custom-control custom-checkbox ">
                                     <input type="checkbox" class="custom-control-input" id="check1">
@@ -137,13 +137,14 @@
         localStorage.setItem("check1", check1);
         $.ajax({
             type: "post",
-            url: "http://localhost:9091/user/login",
+            url: "http://47.103.155.55:7070/jinshipark-road-park-api/user/login",
             dataType: 'json',
             contentType: 'application/json;charset=UTF-8',
             data: JSON.stringify(params),
             success: function (res) {
                 if (res.status == 200) {
-                    alert("登录成功");
+                    console.log(res.data);
+                    window.location.href = './index.html?parkId=' + res.data.parkid + '&userName=' + encodeURIComponent(userName);
                 } else {
                     alert(res.msg);
                 }
